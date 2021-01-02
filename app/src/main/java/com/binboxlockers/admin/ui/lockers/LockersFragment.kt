@@ -17,6 +17,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.binboxlockers.admin.BinboxApplication
 import com.binboxlockers.admin.R
+import com.binboxlockers.admin.ui.LockersArrayAdapter
 
 class LockersFragment : Fragment() {
 
@@ -50,11 +51,26 @@ class LockersFragment : Fragment() {
 
         val listView = root.findViewById<ListView>(R.id.lv_lockers)
         lockersViewModel.lockers.observe(viewLifecycleOwner, Observer {
-            var listItems = emptyList<String>()
-            println("Size is " + it.size)
-            for (i in it)
-                listItems = listItems.plus(i.userLockerNumber)
-            val adapter = ArrayAdapter(activity?.applicationContext!!, android.R.layout.simple_list_item_1, listItems)
+            val adapter = LockersArrayAdapter(activity?.applicationContext!!, it, {
+                lockersViewModel.openSingleLocker(it) { result ->
+                    println("Result $result")
+                    requireActivity().runOnUiThread(Runnable {
+                        Toast.makeText(
+                                BinboxApplication.getAppContext(),
+                                result,
+                                Toast.LENGTH_LONG
+                        ).show()
+                    })
+                }
+            }, { locker ->
+                requireActivity().runOnUiThread(Runnable {
+                    Toast.makeText(
+                            BinboxApplication.getAppContext(),
+                            locker.user,
+                            Toast.LENGTH_LONG
+                    ).show()
+                })
+            })
             listView.adapter = adapter
         })
 

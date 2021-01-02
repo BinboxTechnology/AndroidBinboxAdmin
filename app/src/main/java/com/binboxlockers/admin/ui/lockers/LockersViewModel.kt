@@ -50,11 +50,11 @@ class LockersViewModel(private val parseRepository: ParseRepository) : ViewModel
         }
     }
 
-    fun openSingleLocker(userLockerNumber: String, callback: (result: String) -> Void) {
+    fun openSingleLocker(locker: Locker, callback: (result: String) -> Unit) {
         val mgr = getBluetoothManager()
         mgr.init(BinboxApplication.getAppContext())
         DataShare.lockers.forEach { locker ->
-            if (locker.userLockerNumber == userLockerNumber) {
+            if (locker.userLockerNumber == locker.userLockerNumber) {
                 mgr.connect(locker.lockMACAddress) { result ->
                     callback(result)
                 }
