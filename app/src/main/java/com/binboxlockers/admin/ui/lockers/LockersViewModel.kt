@@ -4,6 +4,7 @@ package com.binboxlockers.admin.ui.lockers
  * @author Chris Byers 12/23/20 - Copyright 2020 Binbox Lockers
  */
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -39,7 +40,9 @@ class LockersViewModel(private val parseRepository: ParseRepository) : ViewModel
         GlobalScope.launch { // launch a new coroutine in background and continue
             DataShare.lockers.forEach { locker ->
                 delay(500L) // non-blocking delay for 1 second (default time unit is ms)
-                mgr.connect(locker.lockMACAddress) { result ->
+                val addr = if (locker.lockMACAddress.isNotEmpty()) convertToMACFormat(locker.lockMACAddress)
+                else convertToMACFormat(locker.lockSerialNumber)
+                mgr.connect(addr) { result ->
                     println("Result: $result")
                     if (result != "Success") {
                         errors.add("Locker #${locker.userLockerNumber} error: $result")
@@ -55,11 +58,32 @@ class LockersViewModel(private val parseRepository: ParseRepository) : ViewModel
         mgr.init(BinboxApplication.getAppContext())
         DataShare.lockers.forEach { locker ->
             if (locker.userLockerNumber == locker.userLockerNumber) {
-                mgr.connect(locker.lockMACAddress) { result ->
+
+                val addr = if (locker.lockMACAddress.isNotEmpty()) convertToMACFormat(locker.lockMACAddress)
+                else convertToMACFormat(locker.lockSerialNumber)
+
+                mgr.connect(addr) { result ->
                     callback(result)
                 }
             }
         }
     }
 
+    private fun convertToMACFormat(input: String): String? {
+        var addr = input
+        try {
+            addr = input.toUpperCase()
+            if (!addr.contains(":")) {
+                val bldr = StringBuilder()
+                for (i in 0..5) {
+                    bldr.append(addr.substring(i * 2, i * 2 + 2))
+                    if (i != 5) bldr.append(":")
+                }
+                addr = bldr.toString()
+            }
+        } catch (e: Exception) {
+            Log.e("convertToMACFormat", "Error:$e")
+        }
+        return addr
+    }
 }
